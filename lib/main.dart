@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:recipe_layout/auth_gate.dart';
 import 'models/recipe_model.dart';
 import 'views/mobile_layout_with_tabs.dart';
 import 'views/tablet_layout.dart';
 import 'views/desktop_layout.dart';
+import 'firebase_options.dart';  
+import 'package:firebase_core/firebase_core.dart';  
 
-void main() {
+void main() async{
+    // Add from here...
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // To here.
   runApp(const MaterialApp(
-    home: MyApp(),
+    debugShowCheckedModeBanner: false,
+    home: AuthGate(clientId: '709918116887-r25furm4fc5gbk7r5juhdtq7ir7od0gn.apps.googleusercontent.com'),
   ));
 }
 

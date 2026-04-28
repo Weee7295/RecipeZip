@@ -1,5 +1,10 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+# Force modern CMake to accept the older Firebase C++ SDK
+set(CMAKE_POLICY_VERSION_MINIMUM "3.5" CACHE STRING "Workaround for Firebase SDK")
+
+# Suppress the developer warnings from desktop_webview_auth
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE INTERNAL "Suppress dev warnings")
 project(recipe_layout LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change

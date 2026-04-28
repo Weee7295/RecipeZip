@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/recipe_model.dart';
 
 // ============================================================================
 // INGREDIENTS SECTION
@@ -9,9 +8,9 @@ class IngredientsSection extends StatelessWidget {
   final List<String> ingredients;
 
   const IngredientsSection({
-    Key? key,
+    super.key,
     required this.ingredients,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +53,9 @@ class MethodSection extends StatelessWidget {
   final List<String> method;
 
   const MethodSection({
-    Key? key,
+    super.key,
     required this.method,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,12 +112,12 @@ class RecipeHeaderCard extends StatelessWidget {
   final String description;
 
   const RecipeHeaderCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.servings,
     required this.time,
     required this.description,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -8,9 +8,9 @@ class TabletLayout extends StatelessWidget {
   final Recipe recipe;
  
   const TabletLayout({
-    Key? key,
+    super.key,
     required this.recipe,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

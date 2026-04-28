@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 // ============================================================================
 
 class IngredientsSection extends StatelessWidget {
-  const IngredientsSection({Key? key}) : super(key: key);
+  const IngredientsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class IngredientsSection extends StatelessWidget {
 // ============================================================================
 
 class MethodSection extends StatelessWidget {
-  const MethodSection({Key? key}) : super(key: key);
+  const MethodSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,12 +78,12 @@ class RecipeHeaderCard extends StatelessWidget {
   final String description;
 
   const RecipeHeaderCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.servings,
     required this.time,
     required this.description,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

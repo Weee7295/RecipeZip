@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:recipe_layout/home.dart';
 import '../models/recipe_model.dart';
 import '../widgets/recipe_sections_updated.dart';
 
@@ -8,11 +9,11 @@ class MobileLayoutWithTabs extends StatefulWidget {
   final Function(int) onRecipeChanged;
 
   const MobileLayoutWithTabs({
-    Key? key,
+    super.key,
     required this.recipes,
     required this.currentIndex,
     required this.onRecipeChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<MobileLayoutWithTabs> createState() =>
@@ -54,6 +55,19 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs>
         title: const Text('Recipes'),
         backgroundColor: Colors.pink.shade50,
         elevation: 0,
+        actions: [
+          // This adds the person icon to the top right corner
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              // This routes the user to the HomeScreen when clicked
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
