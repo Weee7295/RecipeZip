@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-//import '../widgets/recipe_sections.dart';
 import '../models/recipe_model.dart';
 import '../widgets/recipe_sections_updated.dart';
 import '../helpers/device_helper.dart';
@@ -19,21 +18,15 @@ class DesktopLayout extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 1400),
         child: Row(
           children: [
-            // ====================================================================
-            // LEFT: Large image
-            // ====================================================================
             Expanded(
               flex: 1,
               child: Image.asset(
-                'assets/images/pinkcake.jpg',
+                recipe.imageAsset, // Updated to use actual recipe image
                 fit: BoxFit.cover,
                 height: double.infinity,
               ),
             ),
 
-            // ====================================================================
-            // CENTER: Title and description
-            // ====================================================================
             Expanded(
               flex: 1,
               child: SingleChildScrollView(
@@ -42,7 +35,6 @@ class DesktopLayout extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Recipe header with larger text
                       Text(
                         recipe.title,
                         style: TextStyle(
@@ -68,17 +60,17 @@ class DesktopLayout extends StatelessWidget {
                         height: getGapBetweenSections(context),
                       ),
 
-                      // Ingredients Section
-                      IngredientsSection(ingredients: recipe.ingredients),
+                      // Added isComplicated parameter
+                      IngredientsSection(
+                        ingredients: recipe.ingredients,
+                        isComplicated: recipe.isComplicated,
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // ====================================================================
-            // RIGHT: Method section
-            // ====================================================================
             Expanded(
               flex: 1,
               child: SingleChildScrollView(
@@ -87,8 +79,12 @@ class DesktopLayout extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 40),
-                      MethodSection(method: recipe.method),
+                      const SizedBox(height: 40),
+                      // Added isComplicated parameter
+                      MethodSection(
+                        method: recipe.method,
+                        isComplicated: recipe.isComplicated,
+                      ),
                     ],
                   ),
                 ),

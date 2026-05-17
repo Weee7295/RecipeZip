@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:recipe_layout/home.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/recipe_model.dart';
-import '../widgets/recipe_sections_updated.dart';
+import 'recipe_detail_screen.dart'; 
+import 'profile_screen.dart'; 
 
 class MobileLayoutWithTabs extends StatefulWidget {
   final List<Recipe> recipes;
@@ -16,25 +17,17 @@ class MobileLayoutWithTabs extends StatefulWidget {
   });
 
   @override
-  State<MobileLayoutWithTabs> createState() =>
-      _MobileLayoutWithTabsState();
+  State<MobileLayoutWithTabs> createState() => _MobileLayoutWithTabsState();
 }
 
-class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs>
-    with SingleTickerProviderStateMixin {
+class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isGridView = true; 
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: widget.recipes.length,
-      vsync: this,
-      initialIndex: widget.currentIndex,
-    );
-    _tabController.addListener(() {
-      widget.onRecipeChanged(_tabController.index);
-    });
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -45,113 +38,310 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs>
 
   @override
   Widget build(BuildContext context) {
-    final recipe = widget.recipes[_tabController.index];
-
     return Scaffold(
-      // ========================================================================
-      // APP BAR with Tabs
-      // ========================================================================
+      backgroundColor: const Color(0xFFFFF8DC),
       appBar: AppBar(
-        title: const Text('Recipes'),
-        backgroundColor: Colors.pink.shade50,
-        elevation: 0,
+        title: const Text(
+          'Queen of Sauce',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Courier'),
+        ),
+        backgroundColor: const Color(0xFF5D4037),
+        elevation: 4,
         actions: [
-          // This adds the person icon to the top right corner
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () {
-              // This routes the user to the HomeScreen when clicked
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: true,
-          indicatorColor: Colors.pink,
-          labelColor: Colors.pink,
-          unselectedLabelColor: Colors.grey,
-          tabs: widget.recipes
-              .map((recipe) => Tab(text: recipe.title))
-              .toList(),
+          isScrollable: false,
+          indicatorColor: Colors.white,
+          indicatorWeight: 4.0,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white54,
+          tabs: const [
+            Tab(text: 'Spring'),
+            Tab(text: 'Summer'),
+            Tab(text: 'Fall'),
+            Tab(text: 'Winter'),
+          ],
         ),
       ),
 
-      // ========================================================================
-      // BODY: Recipe content
-      // ========================================================================
-      body: Stack(
+      body: Column(
         children: [
-          // Background image
-          Row(
-            children: [
-              Expanded(
-                child: Image.asset(
-                  recipe.imageAsset,
-                  fit: BoxFit.cover,
-                  height: double.infinity,
-                  width: double.infinity,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.grid_view,
+                    color: _isGridView ? const Color(0xFF5D4037) : Colors.grey,
+                  ),
+                  onPressed: () => setState(() => _isGridView = true),
                 ),
-              ),
-            ],
-          ),
-
-          // Title card positioned on top
-          Positioned(
-            top: 60,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.pink.shade50,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: RecipeHeaderCard(
-                title: recipe.title,
-                servings: recipe.servings,
-                time: recipe.time,
-                description: recipe.description,
-              ),
+                IconButton(
+                  icon: Icon(
+                    Icons.view_list,
+                    color: !_isGridView ? const Color(0xFF5D4037) : Colors.grey,
+                  ),
+                  onPressed: () => setState(() => _isGridView = false),
+                ),
+              ],
             ),
           ),
-
-          // Scrollable content at bottom
-          Positioned(
-            top: 350,
-            left: 20,
-            right: 20,
-            bottom: 20,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: IngredientsSection(ingredients: recipe.ingredients),
-                  ),
-                  const SizedBox(height: 40),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: MethodSection(method: recipe.method),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
+          
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildRecipeDashboard('Spring'),
+                _buildRecipeDashboard('Summer'),
+                _buildRecipeDashboard('Fall'),
+                _buildRecipeDashboard('Winter'),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRecipeDashboard(String season) {
+    final recipesToShow = widget.recipes.where((recipe) => recipe.season == season).toList();
+
+    if (recipesToShow.isEmpty) {
+      return const Center(
+        child: Text(
+          'No recipes discovered for this season yet.',
+          style: TextStyle(fontSize: 16, color: Color(0xFF5D4037), fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+
+    if (_isGridView) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 1,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.8,
+        ),
+        itemCount: recipesToShow.length,
+        itemBuilder: (context, index) => _buildRecipeCard(recipesToShow[index]),
+      );
+    } else {
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: recipesToShow.length,
+        itemBuilder: (context, index) => _buildRecipeListItem(recipesToShow[index]),
+      );
+    }
+  }
+
+  // --- Updated Grid Card with Favorite Box on the same line as the VEG label ---
+  Widget _buildRecipeCard(Recipe recipe) {
+    return GestureDetector(
+      onTap: () => _openRecipeDetails(recipe),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFF5D4037), width: 3),
+          boxShadow: const [BoxShadow(color: Colors.black26, offset: Offset(2, 2))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Image Section with top-line overlays (VEG and Favorite Box)
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    recipe.imageAsset,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[300],
+                      child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                    ),
+                  ),
+                  
+                  // VEG Label on the Top-Left
+                  if (recipe.isVegetarian)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50),
+                          border: Border.all(color: const Color(0xFF1B5E20), width: 2),
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: const [BoxShadow(color: Colors.black45, offset: Offset(1, 1))],
+                        ),
+                        child: const Text(
+                          'VEG',
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+
+                  // Boxed Favorite Button moved up to the Top-Right (Same horizontal line!)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: _buildBoxedFavoriteButton(recipe),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 2. Bottom Info Row (Title and Duration only)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      recipe.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '🕒 ${recipe.time}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+ Widget _buildRecipeListItem(Recipe recipe) {
+    return GestureDetector(
+      onTap: () => _openRecipeDetails(recipe),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFF5D4037), width: 3),
+          boxShadow: const [BoxShadow(color: Colors.black26, offset: Offset(2, 2))],
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          leading: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFF5D4037), width: 1),
+            ),
+            child: Image.asset(
+              recipe.imageAsset, 
+              fit: BoxFit.cover, 
+              errorBuilder: (c, e, s) => const Icon(Icons.error),
+            ),
+          ),
+          // Using Flexible lets the badge tuck right up against the text
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible( // <--- Changed from Expanded to Flexible!
+                child: Text(
+                  recipe.title, 
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (recipe.isVegetarian) ...[
+                const SizedBox(width: 6), // Tightened gap
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50),
+                    border: Border.all(color: const Color(0xFF1B5E20), width: 1.5),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'VEG', 
+                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              '🕒 ${recipe.time} • ${recipe.servings}', 
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          trailing: _buildBoxedFavoriteButton(recipe),
+        ),
+      ),
+    );
+  }
+
+  // --- The Magic Navigation Sync ---
+  Future<void> _openRecipeDetails(Recipe recipe) async {
+    // 1. Wait for the user to view the detail screen
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecipeDetailScreen(recipe: recipe),
+      ),
+    );
+    // 2. When they click 'Back', refresh the Dashboard to show any new hearts!
+    setState(() {});
+  }
+
+  // --- Shared Stardew-style Boxed Favorite Button ---
+  Widget _buildBoxedFavoriteButton(Recipe recipe) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          recipe.isFavourite = !recipe.isFavourite;
+        });
+      },
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.white, // Light wood slot color
+          border: Border.all(color: const Color(0xFF5D4037), width: 2),
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              offset: Offset(1, 1),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Center(
+          child: Icon(
+            recipe.isFavourite ? Icons.favorite : Icons.favorite_border,
+            size: 18,
+            color: recipe.isFavourite ? Colors.redAccent : const Color(0xFF5D4037),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,3 @@
-// lib/models/recipe_model.dart
-
 class Recipe {
   final int id;
   final String title;
@@ -7,124 +5,85 @@ class Recipe {
   final String time;
   final String description;
   final String imageAsset;
-  final List<String> ingredients;
-  final List<String> method;
+  final String iconImage; 
+  final bool isVegetarian;
+  final bool isComplicated;
+  final String season;
+  bool isFavourite; 
 
-  const Recipe({
+  final Map<String, List<String>> ingredients;
+  final Map<String, List<String>> method;
+
+  Recipe({
     required this.id,
     required this.title,
     required this.servings,
     required this.time,
     required this.description,
     required this.imageAsset,
+    required this.iconImage,
+    required this.isVegetarian,
+    required this.isComplicated,
+    required this.season,
+    this.isFavourite = false,
     required this.ingredients,
     required this.method,
   });
 }
 
-// Sample recipes - you can add more!
+// Sample recipes
 final List<Recipe> allRecipes = [
   Recipe(
     id: 1,
-    title: 'Strawberry Cupcake',
-    servings: '2 servings',
-    time: '15 minutes',
-    description:
-        'Nunc nulla velit, feugiat vitae ex quis, lobortis porta leo. '
-        'Donec dictum lectus in ex accumsan sodales. '
-        'Pellentesque habitant morbi tristique.',
-    imageAsset: 'assets/images/pinkcake.jpg',
-    ingredients: [
-      '100 ml milk',
-      '50 g butter',
-      '3 eggs',
-      '1 tbs cocoa',
-    ],
-    method: [
-      'Mix the dry ingredients.',
-      'Add the milk and eggs.',
-      'Bake at 180°C for 15 mins.',
-    ],
+    title: 'Complete Breakfast',
+    servings: '4 servings',
+    time: '45 minutes',
+    description: "You'll feel ready to take on the world! This highly nutritious meal is a farmer's best friend.",
+    imageAsset: 'assets/images/completeBreakfast.jpg', // Replace with your real photo
+    iconImage: 'assets/images/completeBreakfastIcon.png', // Replace with your Stardew icon asset
+    isVegetarian: true,
+    isComplicated: true,
+    season: 'Spring',
+    isFavourite: false,
+    ingredients: {
+      'Fried Egg': ['2 tbsp EXTRA_VIRGIN OLIVE OIL', '1 tbs UNSALTED BUTTER', '8 LARGE EGGS', 'KOSHER SALT', 'FRESHLY GROUND BLACK PEPPER'],
+      'Hash Browns': ['1 RUSSET POTATOES', '2 tbsp CORNSTARCH', '1 tsp GRANULATED GARLIC', '1/2 tsp ONION POWDER', 'FRESHLY GROUND BLACK PEPPER', 'NEUTRAL HIGH_HEAT COOKING OIL', 'KOSHER SALT'],
+      'Yogurt Pancakes': ['8 oz FRESH RHUBARD', '50g GRANULATED SUGAR', '3 tbsp WATER', 'KOSHER SALT', '115g fresh SALMONBERRIES', '210g ALL-PURPOSE FLOUR', '1 tbsp BAKING SODA', '1.5 tbsp BAKING POWDER', '2 LARGE EGGS, at room temp', '2 tbsp HONEY', '300g PLAIN FULL_FAT GOAT"S MILK COW\'s MILK YOGURT', '2 tbsp UNSALTED BUTTER',],
+    },
+    method: {
+      'Fried Egg': ['Heat oil in a pan.', 'Crack the egg and fry until the whites are set.'],
+      'Hash Browns': ['Preheat the oven to 200°F(95°C).', 'Fit a rimmed baking sheet with a wire rack.', 'Grate the potato.', 'Fry in a hot oiled pan until crispy and golden brown.'],
+      'Yogurt Pancakes': ['Mix flour, egg, and yogurt.', 'Pour batter onto a hot griddle and flip when bubbly.'],
+    },
   ),
   Recipe(
     id: 2,
-    title: 'Chocolate Cake',
+    title: 'Pink Cake',
     servings: '4 servings',
-    time: '30 minutes',
-    description:
-        'A rich and moist chocolate cake perfect for chocolate lovers. '
-        'This classic dessert combines dark chocolate with vanilla frosting. '
-        'Great for celebrations and special occasions.',
-    imageAsset: 'assets/images/pinkcake.jpg', // Use same image or add new ones
-    ingredients: [
-      '200 g flour',
-      '100 g cocoa powder',
-      '200 g sugar',
-      '3 eggs',
-      '100 ml milk',
-      '50 g butter',
-    ],
-    method: [
-      'Preheat oven to 180°C.',
-      'Mix dry ingredients together.',
-      'Add eggs and milk, stir well.',
-      'Pour into pan and bake for 30 mins.',
-      'Cool and frost with chocolate icing.',
-    ],
-  ),
-  Recipe(
-    id: 3,
-    title: 'Vanilla Cheesecake',
-    servings: '8 servings',
-    time: '45 minutes',
-    description:
-        'A creamy vanilla cheesecake with a graham cracker crust. '
-        'Smooth, rich, and absolutely delicious. '
-        'Perfect dessert for any gathering.',
-    imageAsset: 'assets/images/pinkcake.jpg',
-    ingredients: [
-      '200 g graham crackers',
-      '100 g butter',
-      '500 g cream cheese',
-      '100 g sugar',
-      '2 eggs',
-      '1 tsp vanilla extract',
-      '100 ml sour cream',
-    ],
-    method: [
-      'Make crust with crushed crackers and butter.',
-      'Press into baking pan.',
-      'Mix cheese, sugar, eggs, and vanilla.',
-      'Pour onto crust.',
-      'Bake at 160°C for 45 mins.',
-      'Cool completely before serving.',
-    ],
-  ),
-  Recipe(
-    id: 4,
-    title: 'Lemon Tart',
-    servings: '6 servings',
-    time: '20 minutes',
-    description:
-        'A zesty and refreshing lemon tart with crispy pastry. '
-        'Tangy lemon filling with a buttery crust. '
-        'Light and perfect for summer.',
-    imageAsset: 'assets/images/pinkcake.jpg',
-    ingredients: [
-      '1 sheet puff pastry',
-      '4 lemons (zest & juice)',
-      '100 g sugar',
-      '3 eggs',
-      '50 g butter',
-      'Pinch of salt',
-    ],
-    method: [
-      'Preheat oven to 200°C.',
-      'Line tart pan with pastry.',
-      'Mix lemon juice, zest, sugar, and eggs.',
-      'Pour into pastry shell.',
-      'Bake for 20 mins until golden.',
-      'Serve warm or cold.',
-    ],
+    time: '60 minutes',
+    description: "There's little heart candies on top. I'm sure you'll fall in love with it.",
+    imageAsset: 'assets/images/pinkcake.jpg', // Real photo
+    iconImage: 'assets/images/image_29c1a5.png', // Stardew icon
+    isVegetarian: true,
+    isComplicated: false, // Simple dish
+    season: 'Summer',
+    isFavourite: true,
+    ingredients: {
+      'Main': [
+        '1 Melon',
+        '1 cup Wheat Flour',
+        '1 cup Sugar',
+        '1 Egg'
+      ],
+    },
+    method: {
+      'Main': [
+        'Preheat oven to 180°C.',
+        'Blend melon into a puree.',
+        'Mix dry ingredients together.',
+        'Add eggs and melon puree, stir well.',
+        'Pour into pan and bake for 30 mins.',
+      ],
+    },
   ),
 ];

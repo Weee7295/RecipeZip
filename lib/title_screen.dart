@@ -12,7 +12,7 @@ class TitleScreen extends StatelessWidget {
           // 1. Full-screen Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/cover.jpg',
+              'assets/images/titleMobile.png',
               fit: BoxFit.cover, // Ensures the image covers the whole screen
             ),
           ),
@@ -25,9 +25,9 @@ class TitleScreen extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.4),
+                    Colors.black.withValues(alpha: 0.4),
                     Colors.transparent,
-                    Colors.black.withOpacity(0.6),
+                    Colors.black.withValues(alpha: 0.6),
                   ],
                 ),
               ),
@@ -40,29 +40,10 @@ class TitleScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Spacer(flex: 2),
+                  const Spacer(flex: 6),
+                
                   
-                  // The Title
-                  Text(
-                    'The Queen of Sauce\nCookBook',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFFFF8DC), // Stardew parchment/cream color
-                      height: 1.2,
-                      // Heavy shadow to mimic retro game title screens
-                      shadows: [
-                        Shadow(
-                          offset: const Offset(3.0, 3.0),
-                          blurRadius: 5.0,
-                          color: Colors.black.withOpacity(0.9),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const Spacer(flex: 3),
+                  const Spacer(flex: 1),
                   
                   // The Enter Button
                   ElevatedButton(
@@ -78,7 +59,7 @@ class TitleScreen extends StatelessWidget {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50), // Stardew grassy green
+                      backgroundColor: const Color.fromARGB(255, 142, 63, 41), 
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                       // Chunky, square borders to match the pixel-art vibe

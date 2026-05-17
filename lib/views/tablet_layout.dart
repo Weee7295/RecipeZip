@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-//import '../widgets/recipe_sections.dart';
 import '../widgets/recipe_sections_updated.dart';
 import '../models/recipe_model.dart';
 import '../helpers/device_helper.dart';
@@ -18,21 +17,15 @@ class TabletLayout extends StatelessWidget {
 
     return Row(
       children: [
-        // ========================================================================
-        // LEFT: Large image
-        // ========================================================================
         Expanded(
           flex: 1,
           child: Image.asset(
-            'assets/images/pinkcake.jpg',
+            recipe.imageAsset, // Updated to use the actual recipe image
             fit: BoxFit.cover,
             height: double.infinity,
           ),
         ),
 
-        // ========================================================================
-        // RIGHT: Content
-        // ========================================================================
         Expanded(
           flex: 1,
           child: SingleChildScrollView(
@@ -41,7 +34,6 @@ class TabletLayout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Recipe Header
                   RecipeHeaderCard(
                     title: recipe.title,
                     servings: recipe.servings,
@@ -50,12 +42,18 @@ class TabletLayout extends StatelessWidget {
                   ),
                   SizedBox(height: getGapBetweenSections(context)),
 
-                  // Ingredients Section
-                  IngredientsSection(ingredients: recipe.ingredients),
+                  // Added isComplicated parameter
+                  IngredientsSection(
+                    ingredients: recipe.ingredients, 
+                    isComplicated: recipe.isComplicated,
+                  ),
                   SizedBox(height: getGapBetweenSections(context)),
 
-                  // Method Section
-                  MethodSection(method: recipe.method),
+                  // Added isComplicated parameter
+                  MethodSection(
+                    method: recipe.method, 
+                    isComplicated: recipe.isComplicated,
+                  ),
                   SizedBox(height: getGapBetweenSections(context)),
                 ],
               ),

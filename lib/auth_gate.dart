@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider; // Add this import
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';                  // And this import
+import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider; 
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';                  
 import 'package:flutter/material.dart';
 import 'package:recipe_layout/main.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart'; 
@@ -12,7 +12,7 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(                                       // Modify from here...
+    return StreamBuilder<User?>(                                     
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -54,13 +54,13 @@ class AuthGate extends StatelessWidget {
                   aspectRatio: 1,
                   child: Icon(Icons.person, size: 80),
                 ),
-              );                                                     // To here.
+              );                                                     
             }, 
           );
         }
 
         return const MyApp();
       },
-    );                                                                 // To here.
+    );                                                               
   }
 }
