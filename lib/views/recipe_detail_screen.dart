@@ -137,12 +137,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           borderRadius: BorderRadius.circular(4),
                           boxShadow: const [BoxShadow(color: Colors.black26, offset: Offset(2, 2))],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Image.asset(
-                            widget.recipe.iconImage,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.fastfood, color: Colors.white),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: Transform.scale(
+                            scale: 1.2, // Adjust this number to change the zoom level
+                            child: Image.asset(
+                              widget.recipe.iconImage,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.none, // Keeps the pixel art clean and crisp
+                              errorBuilder: (context, error, stackTrace) => 
+                                  const Icon(Icons.fastfood, color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
@@ -300,7 +305,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   // --- Helper: Builds Dropdowns or Simple Lists ---
-  Widget _buildSectionContent({required Map<String, List<String>> data, required bool isComplicated, bool isNumbered = false}) {
+ Widget _buildSectionContent({required Map<String, List<String>> data, required bool isComplicated, bool isNumbered = false}) {
     if (isComplicated) {
       return Column(
         children: data.entries.map((entry) {
@@ -310,7 +315,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               tilePadding: EdgeInsets.zero,
               iconColor: const Color(0xFF5D4037),
               collapsedIconColor: const Color(0xFF5D4037),
-              title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF8B5A2B))),
+              title: Row(
+                children: [
+                  Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF8B5A2B))),
+    
+                ],
+              ),
               children: entry.value.asMap().entries.map((item) {
                 return _buildListItem(item.value, item.key, isNumbered);
               }).toList(),
@@ -328,19 +338,64 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   // --- Helper: Renders individual text rows ---
+// --- Completely Fixed & Cleaned Linkable List Item ---
   Widget _buildListItem(String text, int index, bool isNumbered) {
+    final Recipe? linkedRecipe = widget.recipe.subRecipes
+        .where((r) => text.toLowerCase().contains(r.title.toLowerCase()))
+        .firstOrNull;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0, left: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center, // Keeps bullet, text, and button vertically centered together
         children: [
+          // 1. Bullet point or numbering prefix
           Text(
             isNumbered ? '${index + 1}. ' : '• ',
             style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF5D4037), fontSize: 16),
           ),
-          Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 16, height: 1.4)),
+          
+          // 2. The ingredient or instruction text string
+          // Flexible allows text to occupy natural width and safely wraps down if it's long
+          Flexible(
+            child: Text(
+              text, 
+              style: const TextStyle(fontSize: 16, color: Color(0xFF5D4037), height: 1.4),
+            ),
           ),
+          
+          // 3. Inline Game-Style Link Button (Kept safely inside the Row children array!)
+          if (linkedRecipe != null) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RecipeDetailScreen(recipe: linkedRecipe),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDC484), // Retro wood slot finish
+                  border: Border.all(color: const Color(0xFF5D4037), width: 1.5),
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: const [BoxShadow(color: Colors.black12, offset: Offset(1, 1))],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '>', 
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
