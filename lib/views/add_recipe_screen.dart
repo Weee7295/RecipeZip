@@ -123,6 +123,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   // --- SAVE RECIPE LOGIC (was missing + had orphaned code) ---
+  // --- THE FIXED FIREBASE SAVE FUNCTION ---
   Future<void> _saveRecipeToInternet() async {
     // Basic validation
     if (_titleController.text.trim().isEmpty) {
@@ -149,41 +150,57 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         if (localIcon != null) iconUrl = localIcon;
       }
 
-      // Step 2: Build components list
-      final List<Map<String, dynamic>> componentsData = _components.map((comp) {
-        return {
-          'title': comp.titleController.text.trim(),
-          'ingredients': comp.ingredients
-              .map((c) => c.text.trim())
-              .where((s) => s.isNotEmpty)
-              .toList(),
-          'methods': comp.methods
-              .map((c) => c.text.trim())
-              .where((s) => s.isNotEmpty)
-              .toList(),
-        };
-      }).toList();
+      // 🛠️ Step 2: Restructure components into the exact Maps your Recipe Model expects!
+      Map<String, List<String>> finalIngredients = {};
+      Map<String, List<String>> finalMethods = {};
 
-      // Step 3: Save to Firestore
+      for (var comp in _components) {
+        String compName = comp.titleController.text.trim();
+        if (compName.isEmpty) compName = 'Main'; // Fallback name
+
+        // Extract non-empty text values from text field controllers
+        List<String> ingList = comp.ingredients
+            .map((c) => c.text.trim())
+            .where((text) => text.isNotEmpty)
+            .toList();
+            
+        List<String> metList = comp.methods
+            .map((c) => c.text.trim())
+            .where((text) => text.isNotEmpty)
+            .toList();
+
+        // Save them mapped directly under the section name
+        if (ingList.isNotEmpty) finalIngredients[compName] = ingList;
+        if (metList.isNotEmpty) finalMethods[compName] = metList;
+      }
+
+      // Step 3: Save to Firestore matching the exact historical schema
       final user = FirebaseAuth.instance.currentUser;
-      await FirebaseFirestore.instance.collection('recipes').add({
+      
+      final Map<String, dynamic> structuredRecipeData = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'time': _timeController.text.trim(),
-        'servings': _servingsController.text.trim(),
+        'time': _timeController.text.trim().isEmpty ? '30 mins' : _timeController.text.trim(),
+        'servings': _servingsController.text.trim().isEmpty ? '1 serving' : _servingsController.text.trim(),
         'season': _selectedSeason,
         'isVegetarian': _isVegetarian,
         'isComplicated': _isComplicated,
-        'coverUrl': coverUrl,
-        'iconUrl': iconUrl,
-        'components': componentsData,
+        'isFavourite': false, // Starts out unfavorited
+        'imageAsset': coverUrl, // Mapped to model property expectation
+        'iconImage': iconUrl,   // Mapped to model property expectation
+        'ingredients': finalIngredients,
+        'method': finalMethods,
+        'subRecipes': [], 
         'createdBy': user?.uid ?? 'anonymous',
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      // Push cleanly using a system document reference
+      await FirebaseFirestore.instance.collection('recipes').add(structuredRecipeData);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recipe saved successfully!')),
+          const SnackBar(content: Text('Recipe saved successfully!'), backgroundColor: Color(0xFF4CAF50)),
         );
         Navigator.of(context).pop();
       }
@@ -191,7 +208,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       debugPrint('Error saving recipe: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save recipe: $e')),
+          SnackBar(content: Text('Failed to save recipe: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {

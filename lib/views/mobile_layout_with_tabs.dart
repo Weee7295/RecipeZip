@@ -183,13 +183,9 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with Single
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    recipe.imageAsset,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[300],
-                      child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
-                    ),
+                  // Uses your helper to expand the image perfectly into the box!
+                  SizedBox.expand(
+                    child: _buildRecipeImage(recipe.imageAsset),
                   ),
                   
                   // VEG Label on the Top-Left
@@ -268,11 +264,8 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with Single
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFF5D4037), width: 1),
             ),
-            child: Image.asset(
-              recipe.imageAsset, 
-              fit: BoxFit.cover, 
-              errorBuilder: (c, e, s) => const Icon(Icons.error),
-            ),
+            // Uses your helper to safely load the 50x50 thumbnail!
+            child: _buildRecipeImage(recipe.imageAsset, width: 50, height: 50),
           ),
           // Using Flexible lets the badge tuck right up against the text
           title: Row(

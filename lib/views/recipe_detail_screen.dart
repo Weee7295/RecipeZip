@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:recipe_layout/views/edit_recipe_screen.dart';
 import '../models/recipe_model.dart';
+import 'dart:io';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
@@ -17,8 +18,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   late int _baseServings;
   late int _currentServings;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -26,9 +25,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     _currentServings = _baseServings;
   }
 
-  // ====================================================================
-  // MATH LOGIC: Scales the ingredients dynamically
-  // ====================================================================
   Map<String, List<String>> _getScaledIngredients() {
     if (_currentServings == _baseServings) return widget.recipe.ingredients;
 
@@ -63,6 +59,25 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     });
 
     return scaledMap;
+  }
+
+  // --- Helper: Safely loads either assets or local phone photos ---
+  Widget _buildRecipeImage(String imagePath, {BoxFit fit = BoxFit.cover, FilterQuality quality = FilterQuality.low}) {
+    if (imagePath.startsWith('assets/')) {
+      return Image.asset(
+        imagePath,
+        fit: fit,
+        filterQuality: quality,
+        errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+      );
+    } else {
+      return Image.file(
+        File(imagePath),
+        fit: fit,
+        filterQuality: quality,
+        errorBuilder: (c, e, s) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+      );
+    }
   }
 
   @override
@@ -126,12 +141,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       child: ClipRRect(
                         borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-                        child: Image.asset(
-                          widget.recipe.imageAsset,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
-                        ),
+                            child: _buildRecipeImage(widget.recipe.imageAsset, fit: BoxFit.cover),
                       ),
                     ),
                     Positioned(
@@ -150,13 +160,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           borderRadius: BorderRadius.circular(2),
                           child: Transform.scale(
                             scale: 1.2,
-                            child: Image.asset(
-                              widget.recipe.iconImage,
-                              fit: BoxFit.contain,
-                              filterQuality: FilterQuality.none,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.fastfood, color: Colors.white),
-                            ),
+                            child: _buildRecipeImage(widget.recipe.iconImage, fit: BoxFit.contain, quality: FilterQuality.none),
                           ),
                         ),
                       ),
@@ -458,11 +462,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  // --- Helper: Builds Dropdowns or Simple Lists ---
+  // --- Helper: Builds Dropdowns or Simple Lists safely ---
   Widget _buildSectionContent(
       {required Map<String, List<String>> data,
       required bool isComplicated,
       bool isNumbered = false}) {
+        
+    // 🛡️ THE FIX: Safety check! If the database map is completely empty, don't crash.
+    if (data.isEmpty || data.values.every((list) => list.isEmpty)) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: Text(
+          'No information available.',
+          style: TextStyle(color: Color(0xFF5D4037), fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+
     if (isComplicated) {
       return Column(
         children: data.entries.map((entry) {
@@ -485,6 +501,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         }).toList(),
       );
     } else {
+      // Because we checked data.isEmpty above, calling .first here is now 100% safe!
       return Column(
         children: data.values.first.asMap().entries.map((item) {
           return _buildListItem(item.value, item.key, isNumbered);

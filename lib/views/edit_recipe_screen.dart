@@ -180,7 +180,7 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
     });
   }
 
-  // --- UPDATE RECIPE LOGIC ---
+  // --- FIXED UPDATE RECIPE LOGIC ---
   Future<void> _updateRecipe() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -193,7 +193,6 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
 
     try {
       // Step 1: Resolve image URLs
-      // Only save a new local copy if the user picked a new image
       String coverUrl = _existingCoverUrl;
       String iconUrl = _existingIconUrl;
 
@@ -207,22 +206,29 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
         if (localIcon != null) iconUrl = localIcon;
       }
 
-      // Step 2: Build components list
-      final List<Map<String, dynamic>> componentsData = _components.map((comp) {
-        return {
-          'title': comp.titleController.text.trim(),
-          'ingredients': comp.ingredients
-              .map((c) => c.text.trim())
-              .where((s) => s.isNotEmpty)
-              .toList(),
-          'methods': comp.methods
-              .map((c) => c.text.trim())
-              .where((s) => s.isNotEmpty)
-              .toList(),
-        };
-      }).toList();
+      // 🛠️ Step 2: Restructure components into the exact Maps your Recipe Model expects!
+      Map<String, List<String>> finalIngredients = {};
+      Map<String, List<String>> finalMethods = {};
 
-      // Step 3: Update the existing Firestore document
+      for (var comp in _components) {
+        String compName = comp.titleController.text.trim();
+        if (compName.isEmpty) compName = 'Main'; // Fallback name
+
+        List<String> ingList = comp.ingredients
+            .map((c) => c.text.trim())
+            .where((text) => text.isNotEmpty)
+            .toList();
+            
+        List<String> metList = comp.methods
+            .map((c) => c.text.trim())
+            .where((text) => text.isNotEmpty)
+            .toList();
+
+        if (ingList.isNotEmpty) finalIngredients[compName] = ingList;
+        if (metList.isNotEmpty) finalMethods[compName] = metList;
+      }
+
+      // Step 3: Update the existing Firestore document using the correct Model Keys!
       await FirebaseFirestore.instance
           .collection('recipes')
           .doc(widget.recipeDocId)
@@ -234,27 +240,29 @@ class _EditRecipeScreenState extends State<EditRecipeScreen> {
         'season': _selectedSeason,
         'isVegetarian': _isVegetarian,
         'isComplicated': _isComplicated,
-        'coverUrl': coverUrl,
-        'iconUrl': iconUrl,
-        'components': componentsData,
+        // 👇 THESE KEYS ARE NOW FIXED! 👇
+        'imageAsset': coverUrl, 
+        'iconImage': iconUrl,   
+        'ingredients': finalIngredients, 
+        'method': finalMethods,          
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Recipe updated successfully!')),
+          const SnackBar(content: Text('Recipe updated successfully!'), backgroundColor: Color(0xFF4CAF50)),
         );
         // Pop twice: once for edit screen, once to go back to the list
         // (since the detail screen data is now stale)
         Navigator.of(context)
-          ..pop() // close edit screen
-          ..pop(); // close detail screen so list refreshes
+          ..pop() 
+          ..pop(); 
       }
     } catch (e) {
       debugPrint('Error updating recipe: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update recipe: $e')),
+          SnackBar(content: Text('Failed to update recipe: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
