@@ -1,10 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:recipe_layout/views/edit_recipe_screen.dart';
 import '../models/recipe_model.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
+  final String recipeDocId;
 
-  const RecipeDetailScreen({super.key, required this.recipe});
+  const RecipeDetailScreen({super.key, required this.recipe, required this.recipeDocId});
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -14,11 +17,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   late int _baseServings;
   late int _currentServings;
 
+
+
   @override
   void initState() {
     super.initState();
-    // Extract the number from the string (e.g., "4 servings" -> 4)
-    // Defaults to 1 if no number is found.
     _baseServings = int.tryParse(widget.recipe.servings.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
     _currentServings = _baseServings;
   }
@@ -34,14 +37,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
     widget.recipe.ingredients.forEach((key, list) {
       scaledMap[key] = list.map((ingredient) {
-        // Looks for a number (e.g., "100") or fraction (e.g., "1/2") at the start of the string
         final regex = RegExp(r'^\s*(\d+/\d+|\d+(\.\d+)?)');
         final match = regex.firstMatch(ingredient);
 
         if (match != null) {
           String numStr = match.group(1)!;
           double value;
-          
+
           if (numStr.contains('/')) {
             var parts = numStr.split('/');
             value = double.parse(parts[0]) / double.parse(parts[1]);
@@ -50,14 +52,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           }
 
           double newValue = value * multiplier;
-          // Format the number so it doesn't show "2.0", just "2"
-          String newStringValue = newValue == newValue.roundToDouble() 
-              ? newValue.toInt().toString() 
+          String newStringValue = newValue == newValue.roundToDouble()
+              ? newValue.toInt().toString()
               : newValue.toStringAsFixed(2).replaceAll(RegExp(r'0*$'), '').replaceAll(RegExp(r'\.$'), '');
-          
+
           return ingredient.replaceFirst(numStr, newStringValue);
         }
-        return ingredient; // Returns original if no number found (e.g., "Pinch of salt")
+        return ingredient;
       }).toList();
     });
 
@@ -67,7 +68,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF8B5A2B), // Deep wood brown
+      backgroundColor: const Color(0xFF8B5A2B),
       appBar: AppBar(
         title: Text(
           widget.recipe.title,
@@ -82,10 +83,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               widget.recipe.isFavourite ? Icons.favorite : Icons.favorite_border,
               color: widget.recipe.isFavourite ? Colors.redAccent : Colors.white,
             ),
-            onPressed: () {
+            onPressed: () async {
+              final newValue = !widget.recipe.isFavourite;
               setState(() {
-                widget.recipe.isFavourite = !widget.recipe.isFavourite;
+                widget.recipe.isFavourite = newValue;
               });
+              // Write the change to Firestore so the profile screen sees it
+              await FirebaseFirestore.instance
+                  .collection('recipes')
+                  .doc(widget.recipeDocId)
+                  .update({'isFavourite': newValue});
             },
           )
         ],
@@ -95,7 +102,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF8DC), // Parchment
+              color: const Color(0xFFFFF8DC),
               border: Border.all(color: const Color(0xFF5D4037), width: 4),
               borderRadius: BorderRadius.circular(8),
               boxShadow: const [
@@ -117,11 +124,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         border: Border(bottom: BorderSide(color: Color(0xFF5D4037), width: 4)),
                       ),
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4), topRight: Radius.circular(4)),
                         child: Image.asset(
                           widget.recipe.imageAsset,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey)),
                         ),
                       ),
                     ),
@@ -132,7 +141,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEDC484), // Lighter wood
+                          color: const Color(0xFFEDC484),
                           border: Border.all(color: const Color(0xFF5D4037), width: 3),
                           borderRadius: BorderRadius.circular(4),
                           boxShadow: const [BoxShadow(color: Colors.black26, offset: Offset(2, 2))],
@@ -140,12 +149,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(2),
                           child: Transform.scale(
-                            scale: 1.2, // Adjust this number to change the zoom level
+                            scale: 1.2,
                             child: Image.asset(
                               widget.recipe.iconImage,
                               fit: BoxFit.contain,
-                              filterQuality: FilterQuality.none, // Keeps the pixel art clean and crisp
-                              errorBuilder: (context, error, stackTrace) => 
+                              filterQuality: FilterQuality.none,
+                              errorBuilder: (context, error, stackTrace) =>
                                   const Icon(Icons.fastfood, color: Colors.white),
                             ),
                           ),
@@ -163,47 +172,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.recipe.title,
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF4E342E)),
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // Metadata Row
+                      // --- TITLE + VEG TAG on the same line ---
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(Icons.access_time, size: 18, color: Color(0xFF5D4037)),
-                          const SizedBox(width: 4),
-                          Text(widget.recipe.time, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          
-                          const SizedBox(width: 16),
-                          
-                          // --- INTERACTIVE SERVING SIZE ---
-                          const Icon(Icons.restaurant, size: 18, color: Color(0xFF5D4037)),
-                          const SizedBox(width: 4),
-                          
-                          _buildChunkyButton('-', () {
-                            if (_currentServings > 1) {
-                              setState(() => _currentServings--);
-                            }
-                          }),
-                          
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          Expanded(
                             child: Text(
-                              '$_currentServings', 
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
+                              widget.recipe.title,
+                              style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4E342E)),
                             ),
                           ),
-                          
-                          _buildChunkyButton('+', () {
-                            setState(() => _currentServings++);
-                          }),
-                          // --------------------------------
-
-                          const Spacer(),
-                          
-                          if (widget.recipe.isVegetarian)
+                          if (widget.recipe.isVegetarian) ...[
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
@@ -211,32 +194,195 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 border: Border.all(color: const Color(0xFF1B5E20), width: 2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text('VEG', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                              child: const Text(
+                                'VEG',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12),
+                              ),
                             ),
+                          ],
                         ],
                       ),
-                      
+
+                      const SizedBox(height: 8),
+
+                      // --- METADATA ROW: time | servings | [spacer] | edit + delete ---
+                      Row(
+                        children: [
+                          // Time
+                          const Icon(Icons.access_time, size: 18, color: Color(0xFF5D4037)),
+                          const SizedBox(width: 4),
+                          Text(widget.recipe.time,
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+
+                          const SizedBox(width: 16),
+
+                          // Servings stepper
+                          const Icon(Icons.restaurant, size: 18, color: Color(0xFF5D4037)),
+                          const SizedBox(width: 4),
+                          _buildChunkyButton('-', () {
+                            if (_currentServings > 1) {
+                              setState(() => _currentServings--);
+                            }
+                          }),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              '$_currentServings',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                          ),
+                          _buildChunkyButton('+', () {
+                            setState(() => _currentServings++);
+                          }),
+
+                          // Push edit & delete to the right
+                          const Spacer(),
+
+                          // Edit icon
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditRecipeScreen(
+                                    recipe: widget.recipe,
+                                    recipeDocId: widget.recipeDocId,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEDC484),
+                                border: Border.all(
+                                    color: const Color(0xFF5D4037), width: 2),
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black26, offset: Offset(1, 1))
+                                ],
+                              ),
+                              child: const Icon(Icons.edit,
+                                  size: 16, color: Color(0xFF5D4037)),
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          // Delete icon
+                          GestureDetector(
+                            onTap: () async {
+                              // Show a confirmation dialog first
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  backgroundColor: const Color(0xFFFFF8DC),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    side: const BorderSide(color: Color(0xFF5D4037), width: 3),
+                                  ),
+                                  title: const Text(
+                                    'Delete Recipe?',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF5D4037),
+                                    ),
+                                  ),
+                                  content: Text(
+                                    'Are you sure you want to delete "${widget.recipe.title}"? This cannot be undone.',
+                                    style: const TextStyle(color: Color(0xFF5D4037)),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(ctx).pop(false),
+                                      child: const Text('Cancel',
+                                          style: TextStyle(color: Color(0xFF8B5A2B))),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () => Navigator.of(ctx).pop(true),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(0xFFE53935),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                          side: const BorderSide(color: Color(0xFF5D4037), width: 2),
+                                        ),
+                                      ),
+                                      child: const Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true && mounted) {
+                                try {
+                                  await FirebaseFirestore.instance
+                                      .collection('recipes')
+                                      .doc(widget.recipeDocId)
+                                      .delete();
+
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Recipe deleted.')),
+                                    );
+                                    Navigator.of(context).pop(); // Go back to the list
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to delete: $e')),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEDC484),
+                                border: Border.all(
+                                    color: const Color(0xFF5D4037), width: 2),
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black26, offset: Offset(1, 1))
+                                ],
+                              ),
+                              child: const Icon(Icons.delete_outline,
+                                  size: 16, color: Color(0xFFE53935)),
+                            ),
+                          ),
+                        ],
+                      ),
+
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12.0),
                         child: Divider(color: Color(0xFF5D4037), thickness: 2),
                       ),
-                      
+
                       Text(
                         '"${widget.recipe.description}"',
-                        style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Color(0xFF4E342E)),
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                            color: Color(0xFF4E342E)),
                       ),
                     ],
                   ),
                 ),
 
                 // ==========================================
-                // INGREDIENTS (Using scaled math!)
+                // INGREDIENTS
                 // ==========================================
                 _buildSectionHeader('Ingredients'),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: _buildSectionContent(
-                    data: _getScaledIngredients(), // Passes the dynamically calculated map
+                    data: _getScaledIngredients(),
                     isComplicated: widget.recipe.isComplicated,
                   ),
                 ),
@@ -248,9 +394,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 // ==========================================
                 _buildSectionHeader('Instructions'),
                 Padding(
-                  padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 24.0),
+                  padding: const EdgeInsets.only(
+                      left: 16.0, right: 16.0, top: 8.0, bottom: 24.0),
                   child: _buildSectionContent(
-                    data: widget.recipe.method, // Methods don't scale
+                    data: widget.recipe.method,
                     isComplicated: widget.recipe.isComplicated,
                     isNumbered: true,
                   ),
@@ -277,8 +424,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ),
         child: Center(
           child: Text(
-            text, 
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF5D4037), fontSize: 18, height: 1.1)
+            text,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5D4037),
+                fontSize: 18,
+                height: 1.1),
           ),
         ),
       ),
@@ -299,28 +450,33 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, color: Color(0xFF5D4037)),
+        style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+            color: Color(0xFF5D4037)),
       ),
     );
   }
 
   // --- Helper: Builds Dropdowns or Simple Lists ---
- Widget _buildSectionContent({required Map<String, List<String>> data, required bool isComplicated, bool isNumbered = false}) {
+  Widget _buildSectionContent(
+      {required Map<String, List<String>> data,
+      required bool isComplicated,
+      bool isNumbered = false}) {
     if (isComplicated) {
       return Column(
         children: data.entries.map((entry) {
           return Theme(
-            data: ThemeData().copyWith(dividerColor: Colors.transparent), 
+            data: ThemeData().copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.zero,
               iconColor: const Color(0xFF5D4037),
               collapsedIconColor: const Color(0xFF5D4037),
-              title: Row(
-                children: [
-                  Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF8B5A2B))),
-    
-                ],
-              ),
+              title: Text(entry.key,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Color(0xFF8B5A2B))),
               children: entry.value.asMap().entries.map((item) {
                 return _buildListItem(item.value, item.key, isNumbered);
               }).toList(),
@@ -338,7 +494,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   // --- Helper: Renders individual text rows ---
-// --- Completely Fixed & Cleaned Linkable List Item ---
   Widget _buildListItem(String text, int index, bool isNumbered) {
     final Recipe? linkedRecipe = widget.recipe.subRecipes
         .where((r) => text.toLowerCase().contains(r.title.toLowerCase()))
@@ -347,24 +502,22 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0, left: 8.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, // Keeps bullet, text, and button vertically centered together
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Bullet point or numbering prefix
           Text(
             isNumbered ? '${index + 1}. ' : '• ',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF5D4037), fontSize: 16),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF5D4037),
+                fontSize: 16),
           ),
-          
-          // 2. The ingredient or instruction text string
-          // Flexible allows text to occupy natural width and safely wraps down if it's long
           Flexible(
             child: Text(
-              text, 
-              style: const TextStyle(fontSize: 16, color: Color(0xFF5D4037), height: 1.4),
+              text,
+              style: const TextStyle(
+                  fontSize: 16, color: Color(0xFF5D4037), height: 1.4),
             ),
           ),
-          
-          // 3. Inline Game-Style Link Button (Kept safely inside the Row children array!)
           if (linkedRecipe != null) ...[
             const SizedBox(width: 8),
             GestureDetector(
@@ -372,24 +525,30 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => RecipeDetailScreen(recipe: linkedRecipe),
+                    builder: (context) =>
+                        RecipeDetailScreen(recipe: linkedRecipe, recipeDocId: linkedRecipe.id,),
                   ),
                 );
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEDC484), // Retro wood slot finish
+                  color: const Color(0xFFEDC484),
                   border: Border.all(color: const Color(0xFF5D4037), width: 1.5),
                   borderRadius: BorderRadius.circular(4),
-                  boxShadow: const [BoxShadow(color: Colors.black12, offset: Offset(1, 1))],
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, offset: Offset(1, 1))
+                  ],
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '>', 
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
+                      '>',
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF5D4037)),
                     ),
                   ],
                 ),

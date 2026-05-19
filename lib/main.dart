@@ -6,6 +6,7 @@ import 'views/tablet_layout.dart';
 import 'views/desktop_layout.dart';
 import 'firebase_options.dart';  
 import 'package:firebase_core/firebase_core.dart';  
+import 'views/main_navigation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,15 +42,7 @@ class _MyAppState extends State<MyApp> {
 
           // Route to different layouts based on screen size
           if (width < 600) {
-            return MobileLayoutWithTabs(
-              recipes: allRecipes,
-              currentIndex: _currentRecipeIndex,
-              onRecipeChanged: (index) {
-                setState(() {
-                  _currentRecipeIndex = index;
-                });
-              },
-            );
+            return const MainNavigation();
           } else if (width < 1200) {
             return TabletLayout(recipe: currentRecipe);
           } else {

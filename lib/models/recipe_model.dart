@@ -1,5 +1,5 @@
 class Recipe {
-  final int id;
+  final String id;
   final String title;
   final String servings;
   final String time;
@@ -30,12 +30,58 @@ class Recipe {
     required this.method,
     this.subRecipes = const [],
   });
+
+  factory Recipe.fromFirestore(Map<String, dynamic> data, String documentId) {
+    return Recipe(
+      id: documentId, 
+      title: data['title'] ?? 'Unknown Recipe',
+      servings: data['servings'] ?? '1 serving',
+      time: data['time'] ?? '30 mins',
+      description: data['description'] ?? '',
+      imageAsset: data['imageAsset'] ?? 'assets/images/default.jpg',
+      iconImage: data['iconImage'] ?? 'assets/images/default_icon.png',
+      isVegetarian: data['isVegetarian'] ?? false,
+      isComplicated: data['isComplicated'] ?? false,
+      season: data['season'] ?? 'Spring',
+      isFavourite: data['isFavourite'] ?? false,
+      // Safely converting the nested Firebase maps back into Dart maps!
+      ingredients: data['ingredients'] != null 
+          ? Map<String, List<String>>.from((data['ingredients'] as Map).map((k, v) => MapEntry(k, List<String>.from(v))))
+          : {'Main': []},
+      method: data['method'] != null
+          ? Map<String, List<String>>.from((data['method'] as Map).map((k, v) => MapEntry(k, List<String>.from(v))))
+          : {'Main': []},
+      // Safely default to empty if subRecipes don't exist yet
+      subRecipes: [], 
+    );
+  }
+
+  
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'servings': servings,
+      'time': time,
+      'description': description,
+      'imageAsset': imageAsset,
+      'iconImage': iconImage,
+      'isVegetarian': isVegetarian,
+      'isComplicated': isComplicated,
+      'season': season,
+      'isFavourite': isFavourite,
+      'ingredients': ingredients,
+      'method': method,
+      // If you have subRecipes, we store them as a list of maps!
+      'subRecipes': subRecipes.map((sub) => sub.toMap()).toList(),
+    };
+  }
 }
 
 // Sample recipes
 final List<Recipe> allRecipes = [
   Recipe(
-    id: 1,
+    id: '1',
     title: 'Complete Breakfast',
     servings: '4 servings',
     time: '45 minutes',
@@ -58,7 +104,7 @@ final List<Recipe> allRecipes = [
     },
   ),
   Recipe(
-    id: 2,
+    id: '2',
     title: 'Farmer\'s Lunch',
     servings: '1 serving',
     time: '60 minutes',
@@ -102,7 +148,7 @@ final List<Recipe> allRecipes = [
     },
     subRecipes: [
       Recipe(
-        id: 101, 
+        id: '101', 
         title: 'ROASTED PARSNIPS with BABY ARUGULA',
         servings: '4 serving',
         time: '60 minutes',
@@ -133,7 +179,7 @@ final List<Recipe> allRecipes = [
     ],
   ),
   Recipe(
-    id: 3,
+    id: '3',
     title: 'Vegetable Stock',
     servings: '2 quarts',
     time: '15 minutes',
@@ -163,7 +209,7 @@ final List<Recipe> allRecipes = [
     },
   ),
   Recipe(
-    id: 4,
+    id: '4',
     title: 'Bread and Bruschetta',
     servings: '4 servings',
     time: '40 minutes',
@@ -224,7 +270,7 @@ final List<Recipe> allRecipes = [
     },
   ),
   Recipe(
-    id: 5, 
+    id: '5', 
     title: 'Maki Roll',
     servings: '6 serving',
     time: '60 minutes',
@@ -274,7 +320,7 @@ final List<Recipe> allRecipes = [
     },
   ),
   Recipe(
-    id: 6,
+    id: '6',
     title: 'Lucky Lunch',
     servings: '4 servings',
     time: '30 minutes',
@@ -319,7 +365,7 @@ final List<Recipe> allRecipes = [
     },
   ),
   Recipe(
-    id: 7,
+    id: '7',
     title: 'Pumpkin Soup',
     servings: '4 servings',
     time: '40 minutes',
@@ -369,7 +415,7 @@ final List<Recipe> allRecipes = [
     },
     subRecipes: [
       Recipe(
-        id: 701, 
+        id: '701', 
         title: 'PECORINO FRICO',
         servings: '4 serving',
         time: '60 minutes',
@@ -398,7 +444,7 @@ final List<Recipe> allRecipes = [
     ],
   ),
   Recipe(
-    id: 8,
+    id: '8',
     title: 'Super Meal',
     servings: '4 servings',
     time: '1.15 hours',

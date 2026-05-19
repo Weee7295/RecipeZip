@@ -1,19 +1,24 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/recipe_model.dart';
 import 'recipe_detail_screen.dart'; 
 import 'profile_screen.dart'; 
+import 'dart:io';
 
 class MobileLayoutWithTabs extends StatefulWidget {
   final List<Recipe> recipes;
   final int currentIndex;
   final Function(int) onRecipeChanged;
+  final bool isVegetarianOnly;             
+  final Function(bool) onVegetarianToggle;
 
   const MobileLayoutWithTabs({
     super.key,
     required this.recipes,
     required this.currentIndex,
     required this.onRecipeChanged,
+    required this.isVegetarianOnly,         
+    required this.onVegetarianToggle
   });
 
   @override
@@ -36,6 +41,15 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with Single
     super.dispose();
   }
 
+  // Helper to handle both hardcoded assets AND local phone photos
+  Widget _buildRecipeImage(String imagePath, {double? width, double? height}) {
+    if (imagePath.startsWith('assets/')) {
+      return Image.asset(imagePath, width: width, height: height, fit: BoxFit.cover);
+    } else {
+      return Image.file(File(imagePath), width: width, height: height, fit: BoxFit.cover);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +67,10 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with Single
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                MaterialPageRoute(builder: (context) => ProfileScreen(
+                      isVegetarianOnly: widget.isVegetarianOnly,
+                      onVegetarianToggle: widget.onVegetarianToggle,
+                )),
               );
             },
           ),
@@ -305,7 +322,7 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with Single
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RecipeDetailScreen(recipe: recipe),
+        builder: (context) => RecipeDetailScreen(recipe: recipe, recipeDocId: recipe.id),
       ),
     );
     // 2. When they click 'Back', refresh the Dashboard to show any new hearts!
@@ -313,18 +330,24 @@ class _MobileLayoutWithTabsState extends State<MobileLayoutWithTabs> with Single
   }
 
   // --- Shared Stardew-style Boxed Favorite Button ---
-  Widget _buildBoxedFavoriteButton(Recipe recipe) {
+    Widget _buildBoxedFavoriteButton(Recipe recipe) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final newValue = !recipe.isFavourite;
         setState(() {
-          recipe.isFavourite = !recipe.isFavourite;
+          recipe.isFavourite = newValue;
         });
+        // Write to Firestore so profile screen stays in sync
+        await FirebaseFirestore.instance
+            .collection('recipes')
+            .doc(recipe.id)
+            .update({'isFavourite': newValue});
       },
       child: Container(
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: Colors.white, // Light wood slot color
+          color: Colors.white,
           border: Border.all(color: const Color(0xFF5D4037), width: 2),
           borderRadius: BorderRadius.circular(4),
           boxShadow: const [
